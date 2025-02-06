@@ -1,0 +1,20 @@
+{
+  "name": "event_mgt_backend",
+  "version": "1.0.0",
+  "description": "backend for event management MERN app ",
+  "homepage": "https://github.com/devjasani79/Event-Management-MERN-APP#readme",
+  "bugs": {
+    "url": "https://github.com/devjasani79/Event-Management-MERN-APP/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devjasani79/Event-Management-MERN-APP.git"
+  },
+  "license": "MIT",
+  "author": "Dev Jasani",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm test"
+  }
+}
