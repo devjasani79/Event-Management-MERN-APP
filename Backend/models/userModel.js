@@ -1,33 +1,30 @@
 const mongoose = require("mongoose");
-const crypto = require("crypto");
 
 const userSchema = new mongoose.Schema(
   {
     username: {
       type: String,
-      required: [true, "Username is required"],
+      required: true,
       trim: true,
-      minlength: [3, "Username must be at least 3 characters long"],
-      maxlength: [30, "Username cannot exceed 30 characters"],
+      minlength: 3,
+      maxlength: 30,
     },
     email: {
       type: String,
-      required: [true, "Email is required"],
+      required: true,
       unique: true,
       trim: true,
       lowercase: true,
-      match: [/.+@.+\..+/, "Please enter a valid email address"], // Regex for email validation
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
-      minlength: [6, "Password must be at least 6 characters long"],
+      required: true,
+      minlength: 6,
     },
     phoneNumber: {
       type: String,
-      required: [true, "Phone number is required"],
+      required: true,
       unique: true,
-      match: [/^\+?[0-9]{10,15}$/, "Please enter a valid phone number"], // Supports international format
     },
     role: {
       type: String,
@@ -38,18 +35,12 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    verificationToken: {
-      type: String, // Temporary token for email verification
+    loginCount: { 
+      type: Number, 
+      default: 0 
     },
   },
   { timestamps: true }
 );
-
-// Generate Email Verification Token
-userSchema.methods.generateVerificationToken = function () {
-  const token = crypto.randomBytes(32).toString("hex");
-  this.verificationToken = crypto.createHash("sha256").update(token).digest("hex");
-  return token;
-};
 
 module.exports = mongoose.model("User", userSchema);

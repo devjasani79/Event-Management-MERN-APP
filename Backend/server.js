@@ -22,7 +22,7 @@ const io = socketIo(server, {
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 
 // Attach io instance to every request
 app.use((req, res, next) => {

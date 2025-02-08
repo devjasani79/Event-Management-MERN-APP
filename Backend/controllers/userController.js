@@ -55,7 +55,17 @@ const registerUser = asyncHandler(async (req, res) => {
     });
 });
 
-// Login User
+const getUserInfo = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user.id).select("-password");
+
+    if (!user) {
+        return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ user });
+});
+
+// Login User with Auto-Verification
 const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
@@ -66,6 +76,16 @@ const loginUser = asyncHandler(async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await bcrypt.compare(password, user.password))) {
+        // Increase login count
+        user.loginCount += 1;
+
+        // Auto-verify user after 5 logins
+        if (user.loginCount >= 5 && !user.isVerified) {
+            user.isVerified = true;
+        }
+
+        await user.save();
+
         res.status(200).json({
             message: "Login successful",
             user: { id: user.id, email: user.email, isVerified: user.isVerified },
@@ -75,6 +95,8 @@ const loginUser = asyncHandler(async (req, res) => {
         res.status(401).json({ message: "Invalid email or password" });
     }
 });
+
+
 
 // Guest Login (No Database Storage)
 const guestLogin = asyncHandler(async (req, res) => {
@@ -94,44 +116,8 @@ const guestLogin = asyncHandler(async (req, res) => {
     });
 });
 
-// Request Email Verification
-const requestVerification = asyncHandler(async (req, res) => {
-    const userId = req.user.id;
-    const user = await User.findById(userId);
 
-    if (!user) return res.status(404).json({ message: "User not found" });
-    if (user.isVerified) return res.status(400).json({ message: "Already verified" });
 
-    const verificationToken = crypto.randomBytes(32).toString("hex");
-    user.verificationToken = verificationToken;
-    await user.save();
-
-    const verifyLink = `${process.env.CLIENT_URL}/verify/${verificationToken}`;
-    await sendEmail({
-        to: user.email,
-        subject: "Verify Your Email",
-        text: `Click the link to verify your email: ${verifyLink}`,
-    });
-
-    res.status(200).json({ message: "Verification link sent to email" });
-});
-
-// Verify Email
-const verifyEmail = asyncHandler(async (req, res) => {
-    const { token } = req.body;
-    const user = await User.findOne({ verificationToken: token });
-
-    if (!user) return res.status(400).json({ message: "Invalid or expired token" });
-
-    user.isVerified = true;
-    user.verificationToken = undefined;
-    await user.save();
-
-    res.status(200).json({
-        message: "Email verified successfully",
-        token: generateToken(user),
-    });
-});
 
 // Update User Info
 const updateUserInfo = asyncHandler(async (req, res) => {
@@ -163,8 +149,7 @@ module.exports = {
     registerUser,
     loginUser,
     guestLogin,
-    requestVerification,
-    verifyEmail,
     updateUserInfo,
+    getUserInfo,
     deleteUser,
 };

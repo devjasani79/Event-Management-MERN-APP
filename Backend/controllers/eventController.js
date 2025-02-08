@@ -34,56 +34,23 @@ const getEventById = asyncHandler(async (req, res) => {
 // @route POST /api/events/create
 // @access Verified Users Only
 const createEvent = asyncHandler(async (req, res) => {
-  console.log("Incoming Event Data:", req.body); // Debugging Log
-
-  const { title, description, date, location, category, image } = req.body;
-
-  // Ensure user is logged in
-  if (!req.user) {
-    res.status(401);
-    throw new Error("Unauthorized. Please log in.");
+  if (!req.file) {
+    return res.status(400).json({ message: "Event image is required" });
   }
 
-  // Check if user is verified
-  if (!req.user.isVerified) {
-    res.status(403);
-    throw new Error("Access denied. Please verify your email to create events.");
-  }
+  const imageUrl = req.file.path; // Cloudinary automatically provides this
 
-  // Check for missing fields
-  if (!title || !date || !location || !category) {
-    console.log("Validation Failed: Missing Fields"); // Debugging Log
-    return res.status(400).json({ 
-      error: "Validation Failed",
-      message: "Title, date, location, and category are required." 
-    });
-  }
+  const newEvent = await Event.create({
+    title: req.body.title,
+    description: req.body.description,
+    date: req.body.date,
+    location: req.body.location,
+    category: req.body.category,
+    image: imageUrl, // Save Cloudinary URL in MongoDB
+    createdBy: req.user.username,
+  });
 
-  try {
-    // Create a new event
-    const event = new Event({
-      title,
-      description,
-      date,
-      location,
-      category,
-      image,
-      createdBy: req.user.username, // Storing username instead of ObjectId
-    });
-
-    await event.save();
-
-    res.status(201).json({
-      message: "Event created successfully!",
-      event,
-    });
-  } catch (error) {
-    console.error("Event Creation Error:", error.message);
-    res.status(500).json({
-      message: "Failed to create event. Please try again.",
-      error: error.message,
-    });
-  }
+  res.status(201).json(newEvent);
 });
 
 // @desc Update an event (Only event creator & verified users)
